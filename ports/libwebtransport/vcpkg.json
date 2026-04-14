@@ -1,0 +1,12 @@
+{
+  "name": "webtransport",
+  "version": "1.0.0",
+  "description": "WebTransport library based on QUICHE",
+  "homepage": "https://github.com/carbon-os/libwebtransport",
+  "license": "MIT", 
+  "dependencies": [
+    "quiche",
+    { "name": "vcpkg-cmake",        "host": true },
+    { "name": "vcpkg-cmake-config", "host": true }
+  ]
+}

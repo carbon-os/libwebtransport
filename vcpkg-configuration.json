@@ -1,0 +1,15 @@
+{
+  "default-registry": {
+    "kind": "git",
+    "repository": "https://github.com/microsoft/vcpkg",
+    "baseline": "3508985146f1b1d248c67ead13f8f54be5b4f5da"
+  },
+  "registries": [
+    {
+      "kind": "git",
+      "repository": "https://github.com/carbon-os/libquiche",
+      "baseline": "032f24a83fa22d5a7cd9b51bb7cdbea2e21f496f",
+      "packages": ["quiche", "abseil-cpp", "boringssl", "protobuf", "zlib"]
+    }
+  ]
+}

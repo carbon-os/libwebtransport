@@ -1,0 +1,8 @@
+
+.DS_Store
+
+/build/
+
+vcpkg/
+
+vcpkg_installed/
