@@ -14,7 +14,11 @@ find_package(Threads REQUIRED)
 find_library(QUICHE_LIB NAMES quiche REQUIRED)
 find_path(QUICHE_INCLUDE_DIR NAMES "quiche/quic/core/quic_types.h" REQUIRED)
 
-file(GLOB QUICHE_EXTRA_LIBS "${CMAKE_PREFIX_PATH}/lib/libquiche_*.a")
+set(QUICHE_EXTRA_LIBS "")
+foreach(_prefix IN LISTS CMAKE_PREFIX_PATH)
+    file(GLOB _found "${_prefix}/lib/libquiche_*.a")
+    list(APPEND QUICHE_EXTRA_LIBS ${_found})
+endforeach()
 
 add_library(quiche::quiche STATIC IMPORTED)
 set_target_properties(quiche::quiche PROPERTIES
@@ -44,7 +48,11 @@ set_target_properties(protobuf::protobuf PROPERTIES
     INTERFACE_LINK_LIBRARIES "${UTF8_RANGE_LIB}"
 )
 
-file(GLOB ABSL_LIBS "${CMAKE_PREFIX_PATH}/lib/libabsl_*.a")
+set(ABSL_LIBS "")
+foreach(_prefix IN LISTS CMAKE_PREFIX_PATH)
+    file(GLOB _found "${_prefix}/lib/libabsl_*.a")
+    list(APPEND ABSL_LIBS ${_found})
+endforeach()
 if(NOT ABSL_LIBS)
     message(FATAL_ERROR "No abseil libraries found")
 endif()
@@ -71,35 +79,35 @@ add_library(webtransport_core STATIC
     src/wtclient.cc
 )
 
-target_include_directories(webtransport_core 
-    PUBLIC 
+target_include_directories(webtransport_core
+    PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>
-    PRIVATE 
+    PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
 target_link_libraries(webtransport_core
     PUBLIC
+        Threads::Threads
+        $<$<BOOL:${APPLE}>:${CORE_FOUNDATION_FW}>
+    PRIVATE
         quiche::quiche
         boringssl::ssl
         boringssl::crypto
         z::z
         protobuf::protobuf
         absl::absl
-        Threads::Threads
-        $<$<BOOL:${APPLE}>:${CORE_FOUNDATION_FW}>
-    PRIVATE
         wt_warnings
 )
 
 # ── Public API ────────────────────────────────────────────────────────────────
 add_library(webtransport STATIC src/webtransport.cc)
-target_include_directories(webtransport 
-    PUBLIC 
+target_include_directories(webtransport
+    PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>
-    PRIVATE 
+    PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
@@ -119,7 +127,17 @@ install(TARGETS webtransport webtransport_core
 install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 install(EXPORT webtransportTargets
-    FILE webtransportConfig.cmake
+    FILE webtransportTargets.cmake
     NAMESPACE webtransport::
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/webtransport
+)
+
+include(CMakePackageConfigHelpers)
+configure_package_config_file(
+    cmake/webtransportConfig.cmake.in
+    "${CMAKE_CURRENT_BINARY_DIR}/webtransportConfig.cmake"
+    INSTALL_DESTINATION ${CMAKE_INSTALL_DATADIR}/webtransport
+)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/webtransportConfig.cmake"
     DESTINATION ${CMAKE_INSTALL_DATADIR}/webtransport
 )
