@@ -13,8 +13,8 @@
     },
     {
       "kind": "git",
-      "repository": "https://github.com/carbon-os/libwebtransport", 
-      "baseline": "INSERT_LATEST_BASELINE_COMMIT",
+      "repository": "https://github.com/carbon-os/libwebtransport",
+      "baseline": "19fd46d5947df105c00e51cbd2bd048ad332f02d",
       "packages": ["webtransport"]
     }
   ]

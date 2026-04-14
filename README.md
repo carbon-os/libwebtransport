@@ -66,7 +66,7 @@ Add a `vcpkg-configuration.json` to your project root pointing to both the libqu
     {
       "kind": "git",
       "repository": "https://github.com/carbon-os/libwebtransport",
-      "baseline": "INSERT_LATEST_BASELINE_COMMIT",
+      "baseline": "19fd46d5947df105c00e51cbd2bd048ad332f02d",
       "packages": ["webtransport"]
     }
   ]
