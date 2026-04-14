@@ -2,28 +2,42 @@
 
 ## Prerequisites
 
-- [cite_start]**CMake** ≥ 3.20 [cite: 1]
-- **Git**
-- [cite_start]**C++20** compatible compiler (Clang or GCC) [cite: 1]
-- **OpenSSL** (for generating local development certificates)
+- CMake ≥ 3.20
+- Git
+- C++20 compatible compiler (Clang or GCC)
+- Go (for certificate generation — install from [golang.org/dl](https://golang.org/dl/))
+- BoringSSL (pulled in automatically via vcpkg)
+
+> **macOS only:** Ensure Xcode Command Line Tools are installed:
+> ```bash
+> xcode-select --install
+> ```
+
+---
 
 ## Build
 
-1. **Clone the repository**
+### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/carbon-os/libwebtransport.git
 cd libwebtransport
 ```
 
-2. **Bootstrap vcpkg**
+### 2. Navigate to the Examples Directory
+
+```bash
+cd examples
+```
+
+### 3. Bootstrap vcpkg
 
 ```bash
 git clone https://github.com/microsoft/vcpkg.git
 ./vcpkg/bootstrap-vcpkg.sh
 ```
 
-3. **Install dependencies**
+### 4. Install Dependencies
 
 This project uses a custom registry for `quiche` and its dependencies (`abseil-cpp`, `boringssl`, `protobuf`, `zlib`).
 
@@ -32,52 +46,69 @@ rm -rf ~/.cache/vcpkg/registries
 ./vcpkg/vcpkg install
 ```
 
-4. **Configure and build**
+### 5. Configure and Build
 
 ```bash
 cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=./vcpkg/scripts/buildsystems/vcpkg.cmake
 cmake --build build
 ```
 
+---
+
 ## Running the Examples
 
-WebTransport relies on QUIC, which requires TLS. For local development and testing, you will need to generate a self-signed certificate before running the server.
+WebTransport runs over QUIC, which requires TLS. You'll need to generate a self-signed certificate before running the server locally.
 
 ### 1. Generate a Self-Signed Certificate
-Run this command from the root of the repository to generate a key and certificate. 
+
+Run the following from the **examples directory**:
 
 ```bash
 export DYLD_LIBRARY_PATH=$(pwd)/vcpkg_installed/arm64-osx/lib:$DYLD_LIBRARY_PATH
-
-
-(lldb) env DYLD_LIBRARY_PATH=/Users/galaxy/Desktop/libwebtransport/vcpkg_installed/arm64-osx/lib
-
-go run scripts/main.go
+go run scripts/gen-keys.go
 ```
+
+This generates `cert.pem` and `key.pem` in your current working directory.
+
+> If debugging with lldb, you can set the library path in the debugger instead:
+> ```
+> (lldb) env DYLD_LIBRARY_PATH=/path/to/libwebtransport/examples/vcpkg_installed/arm64-osx/lib
+> ```
 
 ### 2. Start the Server
-[cite_start]The build process outputs the example binaries into the `build/examples` directory[cite: 6]. The server defaults to looking for `cert.pem` and `key.pem` in your current working directory.
+
+Binaries are output to `build/`. The server looks for `cert.pem` and `key.pem` in your current working directory by default.
 
 ```bash
-./build/examples/wt_server
+./build/wt_server
 ```
-*(Optional)* You can also explicitly specify the host, port, and certificate files:
+
+To explicitly specify cert, key, host, and port:
+
 ```bash
-./build/examples/wt_server 0.0.0.0 4433 cert.pem key.pem
+./build/wt_server cert.pem key.pem 0.0.0.0 4433
 ```
 
 ### 3. Run the Client
-[cite_start]In a separate terminal window, start the client [cite: 6] to connect to the server. The client is pre-configured to disable certificate verification for local testing and will connect to `127.0.0.1:4433/echo` by default.
+
+In a separate terminal, start the client. It disables certificate verification for local testing and connects to `127.0.0.1:4433/chat` by default.
 
 ```bash
-./build/examples/wt_client
+./build/wt_client
 ```
-*(Optional)* You can pass custom arguments to test different routing:
+
+To connect to a different URL:
+
 ```bash
-./build/examples/wt_client 127.0.0.1 4433 /echo "Custom WebTransport Message!"
+./build/wt_client 127.0.0.1:4433/chat
 ```
+
+---
 
 ## Troubleshooting
 
-- If `vcpkg install` fails on the `quiche` package, ensure you have an active internet connection — the custom registry is fetched from `https://github.com/carbon-os/libquiche`.
-- On macOS, make sure Xcode Command Line Tools are installed: `xcode-select --install`
+| Problem | Fix |
+|---|---|
+| `vcpkg install` fails on `quiche` | Ensure internet access — the custom registry is fetched from `https://github.com/carbon-os/libquiche` |
+| TLS handshake failure at runtime | Certificates must have SANs and use PKCS#8 key format — use `go run scripts/gen-keys.go`, not plain `openssl req` |
+| macOS arch mismatch (M1/Intel) | Do not set `CMAKE_OSX_ARCHITECTURES` manually — the protobuf port detects the arch via `uname -m` |
