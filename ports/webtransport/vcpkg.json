@@ -6,7 +6,17 @@
   "license": "MIT", 
   "dependencies": [
     "quiche",
-    { "name": "vcpkg-cmake",        "host": true },
-    { "name": "vcpkg-cmake-config", "host": true }
+    "abseil-cpp",
+    "boringssl",
+    "protobuf",
+    "zlib",
+    {
+      "name": "vcpkg-cmake",
+      "host": true
+    },
+    {
+      "name": "vcpkg-cmake-config",
+      "host": true
+    }
   ]
 }
