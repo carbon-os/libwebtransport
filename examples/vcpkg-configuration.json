@@ -14,7 +14,7 @@
     {
       "kind": "git",
       "repository": "https://github.com/carbon-os/libwebtransport",
-      "baseline": "c3d3a4797b9e4e87f480537de6d06f197adae318",
+      "baseline": "f575d275e299008ccfdb44b176c229b2f97a34bc",
       "packages": ["webtransport"]
     }
   ]
