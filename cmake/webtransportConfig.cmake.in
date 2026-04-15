@@ -3,8 +3,8 @@ include(CMakeFindDependencyMacro)
 
 find_dependency(Threads)
 
-# Resolve the vcpkg-installed prefix (3 levels up from share/webtransport/)
-get_filename_component(_wt_prefix "${CMAKE_CURRENT_LIST_DIR}/../../.." ABSOLUTE)
+# Resolve the vcpkg-installed prefix (2 levels up from share/webtransport/)
+get_filename_component(_wt_prefix "${CMAKE_CURRENT_LIST_DIR}/../.." ABSOLUTE)
 
 macro(_wt_find_lib _var)
     find_library(${_var} NAMES ${ARGN}
@@ -77,3 +77,4 @@ if(APPLE)
 endif()
 
 include("${CMAKE_CURRENT_LIST_DIR}/webtransportTargets.cmake")
+check_required_components(webtransport)
