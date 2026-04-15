@@ -10,7 +10,6 @@ endif()
 
 find_package(Threads REQUIRED)
 
-# Standardized library lookups (vcpkg handles the paths)
 find_library(QUICHE_LIB NAMES quiche REQUIRED)
 find_path(QUICHE_INCLUDE_DIR NAMES "quiche/quic/core/quic_types.h" REQUIRED)
 
@@ -27,7 +26,6 @@ set_target_properties(quiche::quiche PROPERTIES
     INTERFACE_LINK_LIBRARIES      "${QUICHE_EXTRA_LIBS}"
 )
 
-# Find remaining dependencies
 find_library(BORINGSSL_SSL_LIB NAMES ssl REQUIRED)
 find_library(BORINGSSL_CRYPTO_LIB NAMES crypto REQUIRED)
 find_library(ZLIB_LIB NAMES z zlib REQUIRED)
@@ -63,14 +61,6 @@ if(APPLE)
     find_library(CORE_FOUNDATION_FW CoreFoundation REQUIRED)
 endif()
 
-# ── Compiler Warnings ─────────────────────────────────────────────────────────
-add_library(wt_warnings INTERFACE)
-if(MSVC)
-    target_compile_options(wt_warnings INTERFACE /W4 /WX)
-else()
-    target_compile_options(wt_warnings INTERFACE -Wall -Wextra -Wpedantic -Wno-unused-parameter)
-endif()
-
 # ── Core Library ──────────────────────────────────────────────────────────────
 add_library(webtransport_core STATIC
     src/wtengine.cc
@@ -87,6 +77,12 @@ target_include_directories(webtransport_core
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
+if(MSVC)
+    target_compile_options(webtransport_core PRIVATE /W4 /WX)
+else()
+    target_compile_options(webtransport_core PRIVATE -Wall -Wextra -Wpedantic -Wno-unused-parameter)
+endif()
+
 target_link_libraries(webtransport_core
     PUBLIC
         Threads::Threads
@@ -98,11 +94,11 @@ target_link_libraries(webtransport_core
         z::z
         protobuf::protobuf
         absl::absl
-        wt_warnings
 )
 
 # ── Public API ────────────────────────────────────────────────────────────────
 add_library(webtransport STATIC src/webtransport.cc)
+
 target_include_directories(webtransport
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -111,7 +107,13 @@ target_include_directories(webtransport
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
-target_link_libraries(webtransport PUBLIC webtransport_core PRIVATE wt_warnings)
+if(MSVC)
+    target_compile_options(webtransport PRIVATE /W4 /WX)
+else()
+    target_compile_options(webtransport PRIVATE -Wall -Wextra -Wpedantic -Wno-unused-parameter)
+endif()
+
+target_link_libraries(webtransport PUBLIC webtransport_core)
 target_compile_definitions(webtransport PRIVATE $<$<CONFIG:Debug>:WT_DEBUG>)
 
 # ── Installation Rules ────────────────────────────────────────────────────────
