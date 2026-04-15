@@ -1,4 +1,79 @@
 @PACKAGE_INIT@
 include(CMakeFindDependencyMacro)
+
 find_dependency(Threads)
+
+# Resolve the vcpkg-installed prefix (3 levels up from share/webtransport/)
+get_filename_component(_wt_prefix "${CMAKE_CURRENT_LIST_DIR}/../../.." ABSOLUTE)
+
+macro(_wt_find_lib _var)
+    find_library(${_var} NAMES ${ARGN}
+        HINTS "${_wt_prefix}/lib"
+        NO_DEFAULT_PATH
+        REQUIRED)
+endmacro()
+
+_wt_find_lib(_wt_quiche     quiche)
+_wt_find_lib(_wt_ssl        ssl)
+_wt_find_lib(_wt_crypto     crypto)
+_wt_find_lib(_wt_z          z zlib)
+_wt_find_lib(_wt_protobuf   protobuf)
+_wt_find_lib(_wt_utf8range  utf8_range utf8range)
+
+file(GLOB _wt_quiche_extra "${_wt_prefix}/lib/libquiche_*.a")
+file(GLOB _wt_absl_libs    "${_wt_prefix}/lib/libabsl_*.a")
+
+if(NOT _wt_absl_libs)
+    message(FATAL_ERROR "webtransport: no abseil libraries found in ${_wt_prefix}/lib")
+endif()
+
+find_path(_wt_quiche_inc NAMES "quiche/quic/core/quic_types.h"
+    HINTS "${_wt_prefix}/include"
+    NO_DEFAULT_PATH
+    REQUIRED)
+
+if(NOT TARGET quiche::quiche)
+    add_library(quiche::quiche STATIC IMPORTED)
+    set_target_properties(quiche::quiche PROPERTIES
+        IMPORTED_LOCATION             "${_wt_quiche}"
+        INTERFACE_INCLUDE_DIRECTORIES "${_wt_quiche_inc}"
+        INTERFACE_LINK_LIBRARIES      "${_wt_quiche_extra}")
+endif()
+
+if(NOT TARGET boringssl::ssl)
+    add_library(boringssl::ssl STATIC IMPORTED)
+    set_target_properties(boringssl::ssl PROPERTIES IMPORTED_LOCATION "${_wt_ssl}")
+endif()
+
+if(NOT TARGET boringssl::crypto)
+    add_library(boringssl::crypto STATIC IMPORTED)
+    set_target_properties(boringssl::crypto PROPERTIES IMPORTED_LOCATION "${_wt_crypto}")
+endif()
+
+if(NOT TARGET z::z)
+    add_library(z::z STATIC IMPORTED)
+    set_target_properties(z::z PROPERTIES IMPORTED_LOCATION "${_wt_z}")
+endif()
+
+if(NOT TARGET protobuf::protobuf)
+    add_library(protobuf::protobuf STATIC IMPORTED)
+    set_target_properties(protobuf::protobuf PROPERTIES
+        IMPORTED_LOCATION        "${_wt_protobuf}"
+        INTERFACE_LINK_LIBRARIES "${_wt_utf8range}")
+endif()
+
+if(NOT TARGET absl::absl)
+    add_library(absl::absl INTERFACE IMPORTED)
+    set_target_properties(absl::absl PROPERTIES INTERFACE_LINK_LIBRARIES "${_wt_absl_libs}")
+endif()
+
+if(APPLE)
+    find_library(_wt_corefoundation CoreFoundation REQUIRED)
+    if(NOT TARGET apple::CoreFoundation)
+        add_library(apple::CoreFoundation UNKNOWN IMPORTED)
+        set_target_properties(apple::CoreFoundation PROPERTIES
+            IMPORTED_LOCATION "${_wt_corefoundation}")
+    endif()
+endif()
+
 include("${CMAKE_CURRENT_LIST_DIR}/webtransportTargets.cmake")

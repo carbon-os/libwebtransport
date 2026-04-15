@@ -58,7 +58,10 @@ add_library(absl::absl INTERFACE IMPORTED)
 set_target_properties(absl::absl PROPERTIES INTERFACE_LINK_LIBRARIES "${ABSL_LIBS}")
 
 if(APPLE)
-    find_library(CORE_FOUNDATION_FW CoreFoundation REQUIRED)
+    find_library(_wt_corefoundation CoreFoundation REQUIRED)
+    add_library(apple::CoreFoundation UNKNOWN IMPORTED)
+    set_target_properties(apple::CoreFoundation PROPERTIES
+        IMPORTED_LOCATION "${_wt_corefoundation}")
 endif()
 
 # ── Core Library ──────────────────────────────────────────────────────────────
@@ -87,7 +90,7 @@ endif()
 target_link_libraries(webtransport_core
     PUBLIC
         Threads::Threads
-        $<$<BOOL:${APPLE}>:${CORE_FOUNDATION_FW}>
+        $<$<BOOL:${APPLE}>:apple::CoreFoundation>
     PRIVATE
         quiche::quiche
         boringssl::ssl
